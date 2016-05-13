@@ -93,9 +93,12 @@
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         CGFloat s = theta;
-        for (int i = 0; i < (int)(theta / 0.005); i ++) {
+        
+        NSInteger num = abs((int)(theta / 0.005));
+        CGFloat shuai = theta / num;
+        for (int i = 0; i < num; i ++) {
             [NSThread sleepForTimeInterval:0.008];
-            s = s - 0.005;
+            s = s - shuai;
             dispatch_async(dispatch_get_main_queue(), ^{
                 self.arfa += s;
                 [self layoutSubviews];
