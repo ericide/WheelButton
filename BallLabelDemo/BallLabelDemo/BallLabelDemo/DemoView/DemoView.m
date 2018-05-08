@@ -7,15 +7,28 @@
 //
 
 #import "DemoView.h"
-#import "BallPoint.h"
-#import "CG3DPoint.h"
+
 
 @interface DemoView()
 
 @property (nonatomic,strong) UITouch * startPoint;
 @property (nonatomic,assign) CGFloat arfa;
+
+
+
+
 @end
 @implementation DemoView
+
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.backgroundColor = [UIColor blackColor];
+        self.points = [NSMutableArray array];
+    }
+    return self;
+}
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
@@ -23,81 +36,81 @@
 }
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
+    CGSize size = [UIScreen mainScreen].bounds.size;
+    CGPoint location = CGPointMake(size.width/2, size.height/2);
+    CGFloat R = MIN(location.x,location.y)  - 30;
+    
     UITouch * currentTouch = touches.allObjects.lastObject;
     CGPoint currentPoint = [currentTouch locationInView:self];
     CGPoint lastPoint = [currentTouch previousLocationInView:self];
     //    NSLog(@"%@%@",NSStringFromCGPoint(currentPoint),NSStringFromCGPoint(lastPoint));
-    
     CGVector userTrail = CGVectorMake(currentPoint.x - lastPoint.x,currentPoint.y - lastPoint.y);
-    CGVector tangent = CGVectorMake(  self.bounds.size.height / 2 - lastPoint.y, lastPoint.x - self.bounds.size.width / 2);//切线：圆上的点与圆心的向量，xy颠倒后，x取负数
+    CGVector tangent = CGVectorMake( lastPoint.y - currentPoint.y ,currentPoint.x - lastPoint.x);
     
-    CGFloat off = (userTrail.dx * tangent.dx + userTrail.dy * tangent.dy) / (sqrt(pow(tangent.dx,2) + pow(tangent.dy,2))) ;
+
+    CGFloat angle = atan(sqrt(pow(userTrail.dx,2) + pow(userTrail.dy,2)) / R);
+    [self rollWithArrow:tangent angle:angle];
     
-    self.arfa += (off / sqrt(pow(tangent.dx,2) + pow(tangent.dy,2)));
-    [self layoutSubviews];
 }
 
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
 {
-    UITouch * currentTouch = touches.allObjects.lastObject;
-    CGPoint currentPoint = [currentTouch locationInView:self];
-    CGPoint lastPoint = [currentTouch previousLocationInView:self];
-    NSLog(@"%@%@",NSStringFromCGPoint(currentPoint),NSStringFromCGPoint(lastPoint));
-    
-    CGVector userTrail = CGVectorMake(currentPoint.x - lastPoint.x,currentPoint.y - lastPoint.y);
-    CGVector tangent = CGVectorMake(  self.bounds.size.height / 2 - lastPoint.y, lastPoint.x - self.bounds.size.width / 2);//切线：圆上的点与圆心的向量，xy颠倒后，x取负数
-    
-    CGFloat off = (userTrail.dx * tangent.dx + userTrail.dy * tangent.dy) / (sqrt(pow(tangent.dx,2) + pow(tangent.dy,2))) ;
-    
-    CGFloat theta = (off / sqrt(pow(tangent.dx,2) + pow(tangent.dy,2)));
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        CGFloat s = theta;
-        
-        NSInteger num = abs((int)(theta / 0.005));
-        CGFloat shuai = theta / num;
-        for (int i = 0; i < num; i ++) {
-            [NSThread sleepForTimeInterval:0.008];
-            s = s - shuai;
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self.arfa += s;
-                [self layoutSubviews];
-            });
-        }
-    });
+//    UITouch * currentTouch = touches.allObjects.lastObject;
+//    CGPoint currentPoint = [currentTouch locationInView:self];
+//    CGPoint lastPoint = [currentTouch previousLocationInView:self];
+//    NSLog(@"%@%@",NSStringFromCGPoint(currentPoint),NSStringFromCGPoint(lastPoint));
+//
+//    CGVector userTrail = CGVectorMake(currentPoint.x - lastPoint.x,currentPoint.y - lastPoint.y);
+//    CGVector tangent = CGVectorMake(  self.bounds.size.height / 2 - lastPoint.y, lastPoint.x - self.bounds.size.width / 2);//切线：圆上的点与圆心的向量，xy颠倒后，x取负数
+//
+//    CGFloat off = (userTrail.dx * tangent.dx + userTrail.dy * tangent.dy) / (sqrt(pow(tangent.dx,2) + pow(tangent.dy,2))) ;
+//
+//    CGFloat theta = (off / sqrt(pow(tangent.dx,2) + pow(tangent.dy,2)));
+//
+//    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+//        CGFloat s = theta;
+//
+//        NSInteger num = abs((int)(theta / 0.005));
+//        CGFloat shuai = theta / num;
+//        for (int i = 0; i < num; i ++) {
+//            [NSThread sleepForTimeInterval:0.008];
+//            s = s - shuai;
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                self.arfa += s;
+//                [self layoutSubviews];
+//            });
+//        }
+//    });
 }
+
+- (void)rollWithArrow:(CGVector)vector angle:(CGFloat)angle {
+    
+    if (fabs(vector.dx) < 0.00001 && fabs(vector.dy) < 0.00001) {
+        NSLog(@"%@",NSStringFromCGVector(vector));
+        return;
+    }
+    
+    for (int i = 0; i < [self.points count]; i++) {
+        CG3DPoint * originp =  self.points[i];
+        CG3DPoint * resultp = [self RotateArbitraryLineWithInputPoint:originp V1:[[CG3DPoint alloc]initWithX:0 Y:0 Z:0] V2:[[CG3DPoint alloc]initWithX:vector.dx Y:vector.dy Z:0] angle:angle];
+        originp.x = resultp.x;
+        originp.y = resultp.y;
+        originp.z = resultp.z;
+    }
+    [self setNeedsDisplay];
+}
+
 
 - (void)drawRect:(CGRect)rect
 {
+    
+    
+    [super drawRect:rect];
     CGSize size = [UIScreen mainScreen].bounds.size;
     CGPoint location = CGPointMake(size.width/2, size.height/2);
     
-    
-    
-    CGFloat R = MIN(location.x,location.y)  - 30;
-    
-    //设置起始点
-//
-    
-    //增加线条
-    NSMutableArray * points = [NSMutableArray array];
-    
-    for (int i = 0; i < 100; i++) {
-        CGFloat phi =  i * (M_PI * 2 / 100.0);
-        [points addObject:[[BallPoint alloc] initWithphi:phi theta:M_PI_2 r:R]];
-    }
-    
-    
-    for (int i = 0; i < [points count]; i++) {
-        BallPoint * point =  points[i];
-        
-        CG3DPoint * originp = [[CG3DPoint alloc]init];
-        
-        originp.x = point.r * sin(point.theta) * cos(point.phi);
-        originp.y = point.r * sin(point.theta) * sin(point.phi);
-        originp.z = point.r * cos(point.theta);
-        
-        CG3DPoint * resultp = [self RotateArbitraryLineWithInputPoint:originp V1:[[CG3DPoint alloc]initWithX:0 Y:0 Z:0] V2:[[CG3DPoint alloc]initWithX:1 Y:1 Z:1] angle:M_PI_4];
+    for (int i = 0; i < [self.points count]; i++) {
+        CG3DPoint * resultp =  self.points[i];
         
         UIBezierPath *path = [UIBezierPath bezierPath];
         path.lineWidth     = 5.0f;              //设置线条宽度
@@ -106,7 +119,10 @@
         
         [path moveToPoint:CGPointMake(resultp.x + location.x,resultp.y + location.y)];
         [path addLineToPoint:CGPointMake(resultp.x + location.x,resultp.y + location.y)];
-        UIColor *color = [UIColor colorWithRed:(cos(point.theta) + 1)/2.0 green:(cos(point.theta) + 1)/2.0 blue:0 alpha:1];
+        
+        CGFloat length =  sqrt( pow(resultp.x, 2) + pow(resultp.y, 2) + pow(resultp.z, 2) );
+        
+        UIColor *color = [UIColor colorWithRed:(resultp.z / length + 1)/2.0 green:(resultp.z / length + 1)/2.0 blue:0 alpha:1];
         [color set];
         [path closePath];
         [path stroke];
