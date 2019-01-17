@@ -10,8 +10,7 @@ WheelButton
 
 ### Demo
 
-<img src="https://github.com/jlideasoft/pictures/blob/master/xuanzhuan.gif?raw=true" width="320"><br/>
-<img src="https://github.com/jlideasoft/WheelButton/blob/master/BallLabelDemo/demo.gif?raw=true" width="320"><br/>
+
 
 
 
